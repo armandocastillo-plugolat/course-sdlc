@@ -1,0 +1,61 @@
+name: "Gemini PR Review"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Minimal permissions: read repository contents and allow posting PR reviews/comments
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gemini_pr_review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Gemini CLI PR review
+        id: gemini_run
+        uses: google-github-actions/run-gemini-cli@v0.1.15
+        with:
+          # Provide your Gemini API key as a repository secret named GEMINI_API_KEY
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_cli_version: latest
+          upload_artifacts: 'true'
+          # The built-in `/gemini-review` prompt targets PR-style reviews in many examples
+          prompt: '/gemini-review'
+        env:
+          # Allow the action/CLI to post PR reviews and comments
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Provide PR metadata as env variables to help the CLI prompts target the PR
+          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+
+      - name: Upload Gemini artifacts (optional)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gemini-artifacts-${{ github.run_id }}
+          path: gemini-artifacts/**
+
+      - name: Persist summary output (debug)
+        if: always()
+        run: |
+          echo "----- Gemini CLI summary output -----"
+          echo "${{ steps.gemini_run.outputs.summary }}" || true
+
+      - name: Fail on critical findings (optional)
+        if: always()
+        run: |
+          # Adjust the grep patterns to match your Gemini review severity markers
+          echo "Checking Gemini summary for critical markers..."
+          echo "${{ steps.gemini_run.outputs.summary }}" > gemini_summary.txt || true
+          if grep -Eqi "critical|\bCRITICAL\b|🔴" gemini_summary.txt; then
+            echo "Critical issues found by Gemini — failing job as configured." >&2
+            cat gemini_summary.txt >&2
+            exit 1
+          fi
+          echo "No critical severity markers found."
