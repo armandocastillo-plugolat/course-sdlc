@@ -1,0 +1,18 @@
+
+# Testing
+node_modules/
+coverage/
+*.log
+.npm
+.eslintcache
+
+# Test results
+junit.xml
+test-results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
