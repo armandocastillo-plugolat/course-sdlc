@@ -11,11 +11,13 @@ app = Flask(__name__)
 API_KEY = "12345-abcde-secret-key-do-not-share"
 @app.route('/login', methods=['POST'])
 def login():
-  """Handle POST /login.
-
-  Reads 'username' from form data and constructs a SQL query string.
-  Note: The string concatenation shown here is unsafe and susceptible to SQL injection.
-  Returns a placeholder response.
+  """
+  Handle POST /login by reading the 'username' form field and constructing a SQL query string.
+  
+  This implementation concatenates the username into a SQL statement and prints the resulting query; it is unsafe and susceptible to SQL injection. Returns a static placeholder response; no authentication or validation is performed.
+  
+  Returns:
+      str: A placeholder response string ("Logged in (maybe)").
   """
   username = request.form['username']
   query = "SELECT * FROM users WHERE name = '" + username + "'"
@@ -23,10 +25,15 @@ def login():
   return "Logged in (maybe)"
 @app.route('/calculate', methods=['GET'])
 def calculate():
-  """Handle GET /calculate.
-
-  Divides 100 by the 'n' query parameter after converting it to int.
-  No validation is performed; invalid or zero values will raise exceptions.
+  """
+  Compute 100 divided by the integer value of the `n` query parameter and return the result as a string.
+  
+  Expects a query parameter named `n` that can be converted to an integer; no validation is performed. Returns the numeric quotient formatted as a string.
+  
+  Raises:
+      ValueError: if `n` is missing or cannot be converted to an integer.
+      ZeroDivisionError: if `n` is zero.
+      TypeError: if `n` is of an unexpected type.
   """
   # ERROR 3: Logic Bug (crashea con n negativo o string)
   n = request.args.get('n')
